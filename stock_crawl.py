@@ -49,6 +49,8 @@ def craw_stock_static_data(stock_id):
     return craw_stock_content(url)
 
 def parse_sine_static_stock_content(content, stock):
+    matches = re.search("<h1 id=\"stockName\">(.+)<span>", content)
+    stock["name"] = matches.group(1)
     matches = re.search("var totalcapital\s*=\s*([\d.]+);", content)
     stock["total_capital"] = matches.group(1)
     matches = re.search("var currcapital\s*=\s*([\d.]+);", content)
@@ -80,53 +82,50 @@ def craw_stock_realtime_data(stock_id, area):
 
 def parse_sina_realtime_stock_content(content, stock):
     matches = stock_pattern.search(content)
-    if matches == None or matches.lastindex < 1:
-        logger.warning("cannot find match stock_pattern from content : " + content)
-        return None
-    info = matches.group(1).split(",")
-    stock["name"] = info[0]
-    stock["today_open_price"] = info[1]
-    stock["yesterday_close_price"] = info[2]
-    stock["today_close_price"] = info[3]
-    stock["high_price"] = info[4]
-    stock["low_price"] = info[5]
-    stock["volume"] = info[8]
-    stock["turnover"] = info[9]
+    info = matches.group(1).split(",") if matches is not None and matches.lastindex > 0 else []
+#    __set_value(stock, "name", info, 0)
+    __set_value(stock, "today_open_price", info, 1)
+    __set_value(stock, "yesterday_close_price", info, 2)
+    __set_value(stock, "today_close_price", info, 3)
+    __set_value(stock, "high_price", info, 4)
+    __set_value(stock, "low_price", info, 5)
+    __set_value(stock, "volume", info, 8)
+    __set_value(stock, "turnover", info, 9)
     
-    stock["buy_1_num"] = info[10]
-    stock["buy_1_price"] = info[11]
-    stock["buy_2_num"] = info[12]
-    stock["buy_2_price"] = info[13]
-    stock["buy_3_num"] = info[14]
-    stock["buy_3_price"] = info[15]
-    stock["buy_4_num"] = info[16]
-    stock["buy_4_price"] = info[17]
-    stock["buy_5_num"] = info[18]
-    stock["buy_5_price"] = info[19]
+    __set_value(stock, "buy_1_num", info, 10)
+    __set_value(stock, "buy_1_price", info, 11)
+    __set_value(stock, "buy_2_num", info, 12)
+    __set_value(stock, "buy_2_price", info, 13)
+    __set_value(stock, "buy_3_num", info, 14)
+    __set_value(stock, "buy_3_price", info, 15)
+    __set_value(stock, "buy_4_num", info, 16)
+    __set_value(stock, "buy_4_price", info, 17)
+    __set_value(stock, "buy_5_num", info, 18)
+    __set_value(stock, "buy_5_price", info, 19)
     
-    stock["sell_1_num"] = info[20]
-    stock["sell_1_price"] = info[21]
-    stock["sell_2_num"] = info[22]
-    stock["sell_2_price"] = info[23]
-    stock["sell_3_num"] = info[24]
-    stock["sell_3_price"] = info[25]
-    stock["sell_4_num"] = info[26]
-    stock["sell_4_price"] = info[27]
-    stock["sell_5_num"] = info[28]
-    stock["sell_5_price"] = info[29]
+    __set_value(stock, "sell_1_num", info, 20)
+    __set_value(stock, "sell_1_price", info, 21)
+    __set_value(stock, "sell_2_num", info, 22)
+    __set_value(stock, "sell_2_price", info, 23)
+    __set_value(stock, "sell_3_num", info, 24)
+    __set_value(stock, "sell_3_price", info, 25)
+    __set_value(stock, "sell_4_num", info, 26)
+    __set_value(stock, "sell_4_price", info, 27)
+    __set_value(stock, "sell_5_num", info, 28)
+    __set_value(stock, "sell_5_price", info, 29)
     matches = stock_i_pattern.search(content)
-    if matches == None or matches.lastindex < 1:
-        logger.warning("cannot find match stock_i_pattern from content : " + content)
-        return None
-    info = matches.group(1).split(",")
-    stock["total_share_capital"] = info[7]
-    stock["outstanding_shares"] = info[8]
+    info = matches.group(1).split(",") if matches is not None and matches.lastindex > 0 else []
+    __set_value(stock, "total_share_capital", info, 7)
+    __set_value(stock, "outstanding_shares", info, 8)
     matches = bk_jdly_pattern.search(content)
     # area info
     info = matches.group(1).split(",") if matches is not None and matches.lastindex > 0 else []
-    stock["area"] = info[1] if len(info) > 1 else ""
-    stock["area_rate"] = info[5] if len(info) > 5 else ""
+    __set_value(stock, "area", info, 1)
+    __set_value(stock, "area_rate", info, 5)
     return stock
+
+def __set_value(d, k, info, index):
+    d[k] = info[index] if info is not None and len(info) > index else ""
 
 def crawl_stock(stock_id):
     stk = OrderedDict()
