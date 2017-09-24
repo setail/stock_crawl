@@ -20,7 +20,7 @@ OUTPUT_DIR = "./data"
 INPUT_FILE = "./data/all_stock_ids"
 FORMAT = '%(asctime)-8s %(message)s'
 MAX_RETRY = 3
-logging.basicConfig(filename = LOG, format=FORMAT)
+logging.basicConfig(format=FORMAT)
 logger = logging.getLogger("scrawlog")
 logger.setLevel(logging.DEBUG)
 static_url_pattern = "http://finance.sina.com.cn/realstock/company/{0}/nc.shtml"
