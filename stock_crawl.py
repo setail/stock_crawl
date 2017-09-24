@@ -13,6 +13,7 @@ from datetime import date
 from collections import OrderedDict
 import sys
 import os
+import shutil
 import re
 LOG = "./log"
 OUTPUT_DIR = "./data"
@@ -148,6 +149,10 @@ def start(stock_file, output_dir):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     output_file = "{}/stock_{}".format(output_dir.rstrip('/'), date.today().strftime("%Y%m%d"))
+    file_name = output_file
+    if os.path.exists(file_name):
+        file_name = "{}.{}.bak".format(file_name, time.strftime('%l_%M%p'))
+        shutil.move(output_file, file_name)
     with open(stock_file) as f, open(output_file, 'w', encoding="utf-8") as out:
         isFirst = True
         for line in f:
