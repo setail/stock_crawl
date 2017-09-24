@@ -63,6 +63,10 @@ def parse_sine_static_stock_content(content, stock):
     stock["price_20_ago"] = matches.group(1)
     matches = re.search("var price_60_ago\s*=\s*([\d.]+);", content)
     stock["price_60_ago"] = matches.group(1)
+    matches = re.search("var price_120_ago\s*=\s*([\d.]+);", content)
+    stock["price_120_ago"] = matches.group(1)
+    matches = re.search("var price_250_ago\s*=\s*([\d.]+);", content)
+    stock["price_250_ago"] = matches.group(1)
     matches = re.search("var profit\s*=\s*([\d.]+);", content)
     stock["profit"] = matches.group(1)
     matches = re.search("var gradeLevel\s*=\s*([\d.]+);", content)
@@ -117,6 +121,13 @@ def parse_sina_realtime_stock_content(content, stock):
     info = matches.group(1).split(",")
     stock["total_share_capital"] = info[7]
     stock["outstanding_shares"] = info[8]
+    matches = bk_jdly_pattern.search(content)
+    if matches == None or matches.lastindex < 1:
+        logger.warning("cannot find match bk_jdly_pattern from content : " + content)
+        return None
+    info = matches.group(1).split(",")
+    stock["area"] = info[1]
+    stock["area_rate"] = info[5]
     return stock
 
 def crawl_stock(stock_id):
