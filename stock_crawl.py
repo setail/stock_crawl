@@ -23,10 +23,10 @@ logging.basicConfig(filename = LOG, format=FORMAT)
 logger = logging.getLogger("scrawlog")
 logger.setLevel(logging.DEBUG)
 static_url_pattern = "http://finance.sina.com.cn/realstock/company/{0}/nc.shtml"
-realtime_url_pattern = "http://hq.sinajs.cn/rn={0}&list={1},{1}_i,bk_new_jdly"
+realtime_url_pattern = "http://hq.sinajs.cn/rn={0}&list={1},{1}_i,bk_{2}"
 stock_pattern = re.compile("var hq_str_[\w\d]{8}=\"(.*?)\";")
 stock_i_pattern = re.compile("var hq_str_[\w\d]{8}_i=\"(.*?)\";")
-bk_jdly_pattern = re.compile("var hq_str_bk_new_jdly=\"(.*?)\"")
+bk_jdly_pattern = re.compile("var hq_str_bk_new_\w+=\"(.*?)\"")
 
 
 class stock:
@@ -74,8 +74,8 @@ def parse_sine_static_stock_content(content, stock):
     matches = re.search("var gradeAmt\s*=\s*([\d.]+);", content)
     stock["gradeAmt"] = matches.group(1)#评级机构
 
-def craw_stock_realtime_data(stock_id):
-    url = realtime_url_pattern.format(int(time.time() * 1000), stock_id)
+def craw_stock_realtime_data(stock_id, area):
+    url = realtime_url_pattern.format(int(time.time() * 1000), stock_id, area)
     return craw_stock_content(url)
 
 def parse_sina_realtime_stock_content(content, stock):
@@ -122,21 +122,21 @@ def parse_sina_realtime_stock_content(content, stock):
     stock["total_share_capital"] = info[7]
     stock["outstanding_shares"] = info[8]
     matches = bk_jdly_pattern.search(content)
-    if matches == None or matches.lastindex < 1:
-        logger.warning("cannot find match bk_jdly_pattern from content : " + content)
-        return None
-    info = matches.group(1).split(",")
-    stock["area"] = info[1]
-    stock["area_rate"] = info[5]
+    # area info
+    info = matches.group(1).split(",") if matches is not None and matches.lastindex > 0 else []
+    stock["area"] = info[1] if len(info) > 1 else ""
+    stock["area_rate"] = info[5] if len(info) > 5 else ""
     return stock
 
 def crawl_stock(stock_id):
     stk = OrderedDict()
     stk['id'] = stock_id
-    realtime_content = craw_stock_realtime_data(stock_id)
-    parse_sina_realtime_stock_content(realtime_content, stk)
     main_content = craw_stock_static_data(stock_id)
     parse_sine_static_stock_content(main_content, stk)
+    matches = re.search("var bkSymbol\s*=\s*'([\w_]+)';", main_content)
+    area = matches.group(1)
+    realtime_content = craw_stock_realtime_data(stock_id, area)
+    parse_sina_realtime_stock_content(realtime_content, stk)
     return stk
 
 def dump_stock_header_to_string(stk):
