@@ -49,6 +49,10 @@ def craw_stock_static_data(stock_id):
     return craw_stock_content(url)
 
 def parse_sine_static_stock_content(content, stock):
+    matches = re.search("var totalcapital\s*=\s*([\d.]+);", content)
+    stock["total_capital"] = matches.group(1)
+    matches = re.search("var currcapital\s*=\s*([\d.]+);", content)
+    stock["current_capital"] = matches.group(1)
     matches = re.search("var lastfive\s*=\s*([\d.]+);", content)
     stock["average_volume_last_5_days"] = matches.group(1)
     matches = re.search("var price_5_ago\s*=\s*([\d.]+);", content)
