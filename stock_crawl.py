@@ -18,6 +18,7 @@ LOG = "./log"
 OUTPUT_DIR = "./data"
 INPUT_FILE = "./data/all_stock_ids"
 FORMAT = '%(asctime)-8s %(message)s'
+MAX_RETRY = 3
 logging.basicConfig(filename = LOG, format=FORMAT)
 logger = logging.getLogger("scrawlog")
 logger.setLevel(logging.DEBUG)
@@ -145,23 +146,33 @@ def start(stock_file, output_dir):
                     stock_id = "sz" + stock_id
                 else:
                     continue
-            try:
-                logger.info("crawl:" + stock_id)
-                stk = crawl_stock(stock_id)
-                if isFirst:
-                    header = dump_stock_header_to_string(stk)
-                    out.write(header + "\n")
-                    isFirst = False
-                stock_dump = dump_stock_to_string(stk)
-                out.write(stock_dump + "\n")
-                logger.info(stock_dump)
-                time.sleep(10)
-            except KeyboardInterrupt:
-                return
-            except Exception as e:
-                exc_type, exc_obj, tb = sys.exc_info()
-                logger.warning("cannot scrape for {}. exception:{}. linenum:{}".format(stock_id, str(e), tb.tb_lineno))
-    
+            retryTime = 0
+            while retryTime < MAX_RETRY:
+                try:
+                    logger.info("crawl:" + stock_id)
+                    stk = crawl_stock(stock_id)
+                    if isFirst:
+                        header = dump_stock_header_to_string(stk)
+                        out.write(header + "\n")
+                        isFirst = False
+                    stock_dump = dump_stock_to_string(stk)
+                    out.write(stock_dump + "\n")
+                    logger.info(stock_dump)
+                    time.sleep(10)
+                    break
+                except KeyboardInterrupt:
+                    return
+                except IndexError as e:
+                    exc_type, exc_obj, tb = sys.exc_info()
+                    logger.warning("cannot scrape for {}. index error:{}. linenum:{}".format(stock_id, str(e), tb.tb_lineno))
+                    time.sleep(2)
+                    break
+                except Exception as e:
+                    exc_type, exc_obj, tb = sys.exc_info()
+                    logger.warning("cannot scrape for {}. exception:{}. linenum:{}".format(stock_id, str(e), tb.tb_lineno))
+                    time.sleep(3)
+                    retryTime += 1
+        
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--input_file", help="input file", default=INPUT_FILE)
 parser.add_argument("-o", "--output_dir", help="output dir", default=OUTPUT_DIR)
