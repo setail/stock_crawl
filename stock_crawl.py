@@ -114,6 +114,7 @@ def parse_sina_realtime_stock_content(content, stock):
     __set_value(stock, "sell_4_price", info, 27)
     __set_value(stock, "sell_5_num", info, 28)
     __set_value(stock, "sell_5_price", info, 29)
+    __set_value(stock, "date", info, 30)
     matches = stock_i_pattern.search(content)
     info = matches.group(1).split(",") if matches is not None and matches.lastindex > 0 else []
     __set_value(stock, "total_share_capital", info, 7)
