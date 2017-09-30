@@ -14,12 +14,14 @@ from collections import OrderedDict
 import sys
 import os
 import shutil
+import random
 import re
 LOG = "./log"
 OUTPUT_DIR = "./data"
 INPUT_FILE = "./data/all_stock_ids"
 FORMAT = '%(asctime)-8s %(message)s'
 MAX_RETRY = 3
+USER_AGENT = r'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36'
 logging.basicConfig(format=FORMAT)
 logger = logging.getLogger("scrawlog")
 logger.setLevel(logging.DEBUG)
@@ -34,6 +36,8 @@ class stock:
     pass
 
 def craw_stock_content(url):
+    req = request.Request(url)
+    req.add_header('User-agent', USER_AGENT)
     resp = request.urlopen(url)
     if resp is None:
         logger.warning("response for {} is null".format(url))
@@ -178,19 +182,19 @@ def start(stock_file, output_dir):
                     stock_dump = dump_stock_to_string(stk)
                     out.write(stock_dump + "\n")
                     logger.info(stock_dump)
-                    time.sleep(10)
+                    time.sleep(random.randrange(3, 10))
                     break
                 except KeyboardInterrupt:
                     return
                 except IndexError as e:
                     exc_type, exc_obj, tb = sys.exc_info()
                     logger.warning("cannot scrape for {}. index error:{}. linenum:{}".format(stock_id, str(e), tb.tb_lineno))
-                    time.sleep(2)
+                    time.sleep(2 * 1<<retryTime)
                     break
                 except Exception as e:
                     exc_type, exc_obj, tb = sys.exc_info()
                     logger.warning("cannot scrape for {}. exception:{}. linenum:{}".format(stock_id, str(e), tb.tb_lineno))
-                    time.sleep(3)
+                    time.sleep(4 * 1<<retryTime)
                     retryTime += 1
         
 parser = argparse.ArgumentParser()
