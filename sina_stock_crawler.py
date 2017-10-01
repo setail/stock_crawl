@@ -8,6 +8,7 @@ Created on Sun Oct  1 05:36:59 2017
 import re
 import time
 import globl
+import random
 from globl import stock_cols
 
 logger = globl.get_logger()
@@ -17,6 +18,33 @@ price_hist_url_pattern = "http://market.finance.sina.com.cn/pricehis.php?symbol=
 stock_pattern = re.compile("var hq_str_[\w\d]{8}=\"(.*?)\";")
 stock_i_pattern = re.compile("var hq_str_[\w\d]{8}_i=\"(.*?)\";")
 bk_jdly_pattern = re.compile("var hq_str_bk_new_\w+=\"(.*?)\"")
+main_buy_url = 'http://vip.stock.finance.sina.com.cn/q/go.php/vDYData/kind/zlsp/index.phtml?p={}'
+main_buy_pattern = '<tr.*?>\s*<td><a href=.*?>(\w{2}\d{6})</a>\s*</td>\s*<td><a.*?>.+?</a>\s*</td>\s*<td.*?>[.\d]+</td>\s*<td.*?>[-+.\d]+%</td>\s*<td.*?>([-+.\d]+万)</td>\s*<td.*?>([-+.\d]+万)</td>\s*<td.*?>([-+.\d]+万)</td>\s*<td.*?>([-+.\d]+万)</td>\s*<td.*?>([-+.\d]+万)</td>\s*</tr>'
+main_buy_map = {}
+
+def start():
+    i = 0
+    c = 1
+    while i < 100 and c != 0:
+        content = globl.craw_web_content(main_buy_url.format(i))
+        #stockid, main_buy, follow_buy, retail_buy, main_buy_5_days, main_buy_10_days
+        main_buy_info = re.findall(main_buy_pattern, content)
+        c = len(main_buy_info)
+        if main_buy_info == None or len(main_buy_info) == 0:
+            break
+        for item in main_buy_info:            
+            if item is not None and len(item) == 6:
+                main_buy_map[item[0].strip().lower()] = item
+        i += 1
+        time.sleep(random.randrange(1, 7))
+
+def add_main_buy_info(stock, stock_id):
+    main_buy_info = main_buy_map.get(stock_id, None)
+    stock[stock_cols.MAIN_BUY] = main_buy_info[1] if main_buy_info is not None else ""
+    stock[stock_cols.FOLLOW_BUY] = main_buy_info[2] if main_buy_info is not None else ""
+    stock[stock_cols.RETAIL_BUY] = main_buy_info[3] if main_buy_info is not None else ""
+    stock[stock_cols.MAIN_BUY_5_DAYS] = main_buy_info[4] if main_buy_info is not None else ""
+    stock[stock_cols.MAIN_BUY_10_DAYS] = main_buy_info[5] if main_buy_info is not None else ""
 
 def craw_stock_price_hist(stock_id, lastest_date):
     return globl.craw_web_content(price_hist_url_pattern.format(stock_id, lastest_date, lastest_date))
@@ -120,5 +148,6 @@ def crawl_stock_data(stk, stock_id):
     realtime_content = craw_stock_realtime_data(stock_id, area)
     parse_sina_realtime_stock_content(realtime_content, stk)
     close_date = stk[stock_cols.DATE]
+    add_main_buy_info(stk, stock_id)
     parse_stock_price_hist_content(craw_stock_price_hist(stock_id, close_date), stk)
     return stk

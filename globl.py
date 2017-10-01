@@ -62,6 +62,11 @@ class stock_cols:
     AREA = 'area'
     AREA_RATE = 'area_rate'
     DATE = 'date'
+    MAIN_BUY = 'main_buy'
+    FOLLOW_BUY = 'follow_buy'
+    RETAIL_BUY = 'retail_buy'
+    MAIN_BUY_5_DAYS = 'main_buy_5_days'
+    MAIN_BUY_10_DAYS = 'main_buy_10_days'
 
 def get_logger():
     return logger

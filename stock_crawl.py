@@ -43,6 +43,7 @@ def start(stock_file, output_dir):
         file_name = "{}.{}.bak".format(file_name, time.strftime('%l_%M%p'))
         shutil.move(output_file, file_name)
     crawler = sina_stock_crawler
+    crawler.start()
     with open(stock_file) as f, open(output_file, 'w', encoding="utf-8") as out:
         isFirst = True
         for line in f:
