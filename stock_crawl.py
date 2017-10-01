@@ -16,15 +16,17 @@ import shutil
 import random
 import traceback
 from urllib.error import HTTPError
+from collections import OrderedDict
 
 import sina_stock_crawler
-import glob
+import globl
+from globl import stock_cols
 
 LOG = "./log"
 OUTPUT_DIR = "./data"
 INPUT_FILE = "./data/all_stock_ids"
 MAX_RETRY = 3
-logger = glob.get_logger()
+logger = globl.get_logger()
 
 def dump_stock_header_to_string(stk):
     return ",".join([i for i in stk.keys()])
@@ -57,7 +59,9 @@ def start(stock_file, output_dir):
             while retryTime < MAX_RETRY:
                 try:
                     logger.info("crawl:" + stock_id)
-                    stk = crawler.crawl_stock_data(stock_id)
+                    stk = OrderedDict()
+                    stk[stock_cols.ID] = stock_id
+                    crawler.crawl_stock_data(stk, stock_id)
                     if isFirst:
                         header = dump_stock_header_to_string(stk)
                         out.write(header + "\n")

@@ -5,21 +5,34 @@ Created on Sun Oct  1 05:36:59 2017
 
 @author: frank
 """
-from collections import OrderedDict
 import re
 import time
-import glob
-from glob import stock_cols
+import globl
+from datetime import date
+import datetime
+from globl import stock_cols
 
+logger = globl.get_logger()
 static_url_pattern = "http://finance.sina.com.cn/realstock/company/{0}/nc.shtml"
 realtime_url_pattern = "http://hq.sinajs.cn/rn={0}&list={1},{1}_i,bk_{2}"
+price_hist_url_pattern = "http://market.finance.sina.com.cn/pricehis.php?symbol={}&startdate={}&enddate={}"
 stock_pattern = re.compile("var hq_str_[\w\d]{8}=\"(.*?)\";")
 stock_i_pattern = re.compile("var hq_str_[\w\d]{8}_i=\"(.*?)\";")
 bk_jdly_pattern = re.compile("var hq_str_bk_new_\w+=\"(.*?)\"")
 
+def craw_stock_price_hist(stock_id):
+    today = date.today()
+    start_date = today - datetime.timedelta(30)
+    return globl.craw_web_content(price_hist_url_pattern.format(stock_id, start_date, today))
+
+def parse_stock_price_hist_content(content, stock):
+    price_hist_list = re.findall('<td>([.\d]+)</td>\s*<td>(\d+)</td>\s*<td>([.\d]+%)</td>', content)
+    res = ";".join([":".join(i) for i in price_hist_list])
+    stock[stock_cols.PRICE_HIST] = res
+
 def craw_stock_static_data(stock_id):
     url = static_url_pattern.format(stock_id)
-    return glob.craw_web_content(url)
+    return globl.craw_web_content(url)
 
 def __get_match_value(match_obj, i):
     return match_obj.group(1) if match_obj is not None else ""
@@ -54,7 +67,7 @@ def parse_sine_static_stock_content(content, stock):
 
 def craw_stock_realtime_data(stock_id, area):
     url = realtime_url_pattern.format(int(time.time() * 1000), stock_id, area)
-    return glob.craw_web_content(url)
+    return globl.craw_web_content(url)
 
 def parse_sina_realtime_stock_content(content, stock):
     matches = stock_pattern.search(content)
@@ -103,13 +116,12 @@ def parse_sina_realtime_stock_content(content, stock):
 def __set_value(d, k, info, index):
     d[k] = info[index] if info is not None and len(info) > index else ""
 
-def crawl_stock_data(stock_id):
-    stk = OrderedDict()
-    stk[stock_cols.ID] = stock_id
+def crawl_stock_data(stk, stock_id):
     main_content = craw_stock_static_data(stock_id)
     parse_sine_static_stock_content(main_content, stk)
     matches = re.search("var bkSymbol\s*=\s*'([\w_]+)';", main_content)
     area = __get_match_value(matches, 1)
     realtime_content = craw_stock_realtime_data(stock_id, area)
     parse_sina_realtime_stock_content(realtime_content, stk)
+    parse_stock_price_hist_content(craw_stock_price_hist(stock_id), stk)
     return stk

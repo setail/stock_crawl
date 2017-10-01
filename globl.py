@@ -11,7 +11,7 @@ import logging
 FORMAT = '%(asctime)-8s %(message)s'
 logging.basicConfig(format=FORMAT)
 logger = logging.getLogger("scrawlog")
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 USER_AGENT = r'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36'
 
 class stock_cols:
@@ -58,6 +58,7 @@ class stock_cols:
     SELL_5_PRICE = 'sell_5_price'
     TOTAL_SHARE_CAPITAL = 'total_share_capital'
     OUTSTANDING_SHARES = 'outstanding_shares'
+    PRICE_HIST = "price_hist"
     AREA = 'area'
     AREA_RATE = 'area_rate'
     DATE = 'date'
@@ -66,6 +67,7 @@ def get_logger():
     return logger
 
 def craw_web_content(url):
+    logger.debug("start crawl " + url)
     req = request.Request(url)
     req.add_header('User-agent', USER_AGENT)
     resp = request.urlopen(url)
@@ -77,4 +79,5 @@ def craw_web_content(url):
         logger.warning("raw response for {} is null or empty".format(url))
         return None
     resp_str = str(raw_resp, encoding='gbk')
+    logger.debug("get response from " + url)
     return resp_str
