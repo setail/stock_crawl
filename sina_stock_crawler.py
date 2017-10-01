@@ -8,8 +8,6 @@ Created on Sun Oct  1 05:36:59 2017
 import re
 import time
 import globl
-from datetime import date
-import datetime
 from globl import stock_cols
 
 logger = globl.get_logger()
@@ -20,10 +18,8 @@ stock_pattern = re.compile("var hq_str_[\w\d]{8}=\"(.*?)\";")
 stock_i_pattern = re.compile("var hq_str_[\w\d]{8}_i=\"(.*?)\";")
 bk_jdly_pattern = re.compile("var hq_str_bk_new_\w+=\"(.*?)\"")
 
-def craw_stock_price_hist(stock_id):
-    today = date.today()
-    start_date = today - datetime.timedelta(30)
-    return globl.craw_web_content(price_hist_url_pattern.format(stock_id, start_date, today))
+def craw_stock_price_hist(stock_id, lastest_date):
+    return globl.craw_web_content(price_hist_url_pattern.format(stock_id, lastest_date, lastest_date))
 
 def parse_stock_price_hist_content(content, stock):
     price_hist_list = re.findall('<td>([.\d]+)</td>\s*<td>(\d+)</td>\s*<td>([.\d]+%)</td>', content)
@@ -123,5 +119,6 @@ def crawl_stock_data(stk, stock_id):
     area = __get_match_value(matches, 1)
     realtime_content = craw_stock_realtime_data(stock_id, area)
     parse_sina_realtime_stock_content(realtime_content, stk)
-    parse_stock_price_hist_content(craw_stock_price_hist(stock_id), stk)
+    close_date = stk[stock_cols.DATE]
+    parse_stock_price_hist_content(craw_stock_price_hist(stock_id, close_date), stk)
     return stk
